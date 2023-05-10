@@ -1,0 +1,3 @@
+resources:
+- oasisapi.yaml
+- consul-api.yaml  

@@ -1,0 +1,95 @@
+---
+#####Deployment#######################
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  labels:
+    app: oasis-oasis-api
+  name: oasis-oasis-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oasis-oasis-api
+  template:
+    metadata:
+      labels:
+        app: oasis-oasis-api
+      annotations:
+        'consul.hashicorp.com/connect-inject': 'true'         
+        'consul.hashicorp.com/connect-service-upstreams': 'consul-kv-proxy:8500'  
+    spec:
+      containers:
+        - name: consul-template
+          image: hashicorp/consul-template:alpine
+          env:
+          - name: ENV_NAME
+            value: DEV   
+          resources:
+            limits:
+              cpu: 300m
+              memory: 300Mi
+            requests:
+              cpu: 50m
+              memory: 150Mi 
+          securityContext:
+            runAsUser: 0
+          command: ["/bin/sh"]
+          args: ["-c", "/consul-template/start.sh"]
+          volumeMounts:
+            - name: consul-workdir
+              mountPath: /target
+            - name: consul-start-sh
+              mountPath: /consul-template/start.sh
+              subPath: start.sh
+              readOnly: true
+            - name: consul-template-ctmpl
+              mountPath: /consul-template/template.ctmpl
+              subPath: template.ctmpl
+              readOnly: false
+            - name: consul-config-hcl
+              mountPath: /consul-template/config.hcl
+              subPath: config.hcl
+              readOnly: true
+      volumes:
+        - name: consul-workdir
+          emptyDir:
+            medium: "Memory"
+        - name: consul-start-sh
+          configMap:
+            name: oasis-oasis-api
+            defaultMode: 511
+            items:
+              - key: start.sh
+                path: start.sh
+        - name: consul-config-hcl
+          configMap:
+            name: oasis-oasis-api
+            defaultMode: 511
+            items:
+              - key: config.hcl
+                path: config.hcl
+        - name: consul-template-ctmpl
+          configMap:
+            name: oasis-oasis-api
+            defaultMode: 511
+            items:
+              - key: template.ctmpl
+                path: template.ctmpl
+      restartPolicy: Always
+        
+---
+##################  S E R V I C E   ###############
+apiVersion: v1
+kind: Service
+metadata:
+  name: oasis-oasis-api
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+  selector:
+    app: oasis-oasis-api
+---

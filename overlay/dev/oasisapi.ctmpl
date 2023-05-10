@@ -1,0 +1,10 @@
+{{ $ENV_NAME := or (env "ENV_NAME") "QA" }}
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "{{ printf "OASIS/%s/fsoasiscommonappsettings/V2/Default" $ENV_NAME | key }}",
+      "Microsoft": "{{ printf "OASIS/%s/fsoasiscommonappsettings/V2/Microsoft" $ENV_NAME | key }}",
+      "Microsoft.Hosting.Lifetime": "{{ printf "OASIS/%s/fsoasiscommonappsettings/V2/Microsoft.Hosting.Lifetime" $ENV_NAME | key }}"
+    }
+  }
+}

@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: consul-kv-proxy
+data:
+ nginx.conf.template: |
+    error_log /dev/stdout info;
+    server {
+      listen 8500;    
+      location / {
+        access_log off;
+        proxy_pass http://${MY_NODE_IP}:8500;
+        error_log /dev/stdout;          
+      }         
+    }    
+---
+apiVersion: v1
+kind: Service
+metadata:
+  # This name will be the service name in Consul.
+  name: consul-kv-proxy
+spec:
+  selector:
+    app: consul-kv-proxy
+  ports:
+    - protocol: TCP
+      port: 8500      
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: consul-kv-proxy
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consul-kv-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: consul-kv-proxy
+  template:
+    metadata:
+      name: consul-kv-proxy
+      labels:
+        app: consul-kv-proxy
+      annotations:
+        'consul.hashicorp.com/connect-inject': 'true'
+    spec:
+      containers:
+        - name: consul-kv-proxy
+          image: nginx:1.14.2            
+          volumeMounts:
+          - name: config
+            mountPath: "/usr/local/nginx/conf"
+            readOnly: true           
+          command: ['/bin/bash']
+          #we have to transform the nginx config to use the node ip address
+          args:
+            - -c
+            - envsubst < /usr/local/nginx/conf/nginx.conf.template > /etc/nginx/conf.d/consul-kv-proxy.conf && nginx -g 'daemon off;'
+          ports:
+            - containerPort: 8500
+              name: http
+          env:
+            - name: MY_NODE_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP      
+      volumes:
+        - name: config
+          configMap:
+            name: consul-kv-proxy
+      
+      # If ACLs are enabled, the serviceAccountName must match the Consul service name.
+      serviceAccountName: consul-kv-proxy

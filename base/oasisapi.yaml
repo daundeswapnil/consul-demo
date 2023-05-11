@@ -24,7 +24,11 @@ spec:
           image: hashicorp/consul-template:alpine
           env:
           - name: ENV_NAME
-            value: DEV   
+            value: DEV
+          - name: PROD_NAME
+            value: OASIS
+          - name: VERSION
+            value: V2  
           resources:
             limits:
               cpu: 300m

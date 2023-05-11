@@ -1,10 +1,17 @@
 {{ $ENV_NAME := or (env "ENV_NAME") "QA" }}
+{{ $PROD_NAME := or (env "PROD_NAME") "OASIS" }}
+{{ $VERSION := or (env "VERSION") "V2" }}
 {
   "Logging": {
     "LogLevel": {
-      "Default": "{{ printf "OASIS/%s/fsoasiscommonappsettings/V2/Default" $ENV_NAME | key }}",
-      "Microsoft": "{{ printf "OASIS/%s/fsoasiscommonappsettings/V2/Microsoft" $ENV_NAME | key }}",
-      "Microsoft.Hosting.Lifetime": "{{ printf "OASIS/%s/fsoasiscommonappsettings/V2/Microsoft.Hosting.Lifetime" $ENV_NAME | key }}"
+      "Default": "{{ printf "%s/%s/fsoasiscommonappsettings/%s/Default" $PROD_NAME $ENV_NAME $VERSION | key }}",
+      "Microsoft": "{{ printf "%s/%s/fsoasiscommonappsettings/%s/Microsoft" $PROD_NAME $ENV_NAME $VERSION | key }}",
+      "Microsoft.Hosting.Lifetime": "{{ printf "%s/%s/fsoasiscommonappsettings/%s/Microsoft.Hosting.Lifetime" $PROD_NAME $ENV_NAME $VERSION | key }}"
     }
-  }
+  },
+  "AllowedHosts": "{{ printf "%s/%s/fsoasisoasis/%s/AllowedHosts" $PROD_NAME $ENV_NAME $VERSION | key }}",
+  "ASPNETCORE_ENVIRONMENT": "{{ printf "%s/%s/fsoasiscommonappsettings/%s/ASPNETCORE_ENVIRONMENT" $PROD_NAME $ENV_NAME $VERSION | key }}",
+  "ServerRootPathName": "{{ printf "%s/%s/fsoasisoasis/%s/ServerRootPathName" $PROD_NAME $ENV_NAME $VERSION | key }}",
+  "SecretKey": "{{ with printf "%s/%s/fsoasisoasis/%s" $PROD_NAME $ENV_NAME $VERSION | secret }}{{ .Data.SecretKey }}{{ end }}",
+  "DbConnectionString": "{{ with printf "%s/%s/fsoasisoasis/%s" $PROD_NAME $ENV_NAME $VERSION | secret }}{{ .Data.DbConnectionString }}{{ end }}"
 }
